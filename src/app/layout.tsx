@@ -12,7 +12,7 @@ export default function RootLayout({
     <html lang="en" className={GeistSans.className}>
       <body className="bg-background text-foreground">
         <Navbar />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">{children}</main>
+        {children}
         <Footer />
       </body>
     </html>

@@ -75,28 +75,30 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-20 sm:py-32">
-      <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-4xl sm:text-5xl font-bold text-white">
-          All the features you need, none that you don't.
-        </h2>
-        <p className="mt-4 text-lg sm:text-xl text-white/70">
-          GradFlo is packed with features to help you succeed in college.
-        </p>
-      </div>
-      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-        {features.map((feature) => (
-          <div
-            key={feature.name}
-            className="bg-white/5 p-8 rounded-2xl border border-white/10"
-          >
-            <div className="text-primary">{feature.icon}</div>
-            <h3 className="mt-4 text-xl font-bold text-white">
-              {feature.name}
-            </h3>
-            <p className="mt-2 text-white/70">{feature.description}</p>
-          </div>
-        ))}
+    <section className="py-20 sm:py-32 bg-light-purple">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
+            All the features you need, none that you don't.
+          </h2>
+          <p className="mt-4 text-lg sm:text-xl text-foreground/70">
+            GradFlo is packed with features to help you succeed in college.
+          </p>
+        </div>
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {features.map((feature) => (
+            <div
+              key={feature.name}
+              className="bg-foreground/5 p-8 rounded-2xl border border-foreground/10"
+            >
+              <div className="text-primary">{feature.icon}</div>
+              <h3 className="mt-4 text-xl font-bold text-foreground">
+                {feature.name}
+              </h3>
+              <p className="mt-2 text-foreground/70">{feature.description}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
