@@ -1,4 +1,5 @@
 import { HeroImage } from "./HeroImage";
+import Link from "next/link";
 
 export function Hero() {
   return (
@@ -12,12 +13,16 @@ export function Hero() {
       </p>
 
       <div className="flex justify-center gap-4 mt-8">
-        <button className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
-          Get Started
-        </button>
-        <button className="border border-foreground/20 px-6 py-3 rounded-xl hover:bg-foreground/10 transition-colors">
-          Learn More
-        </button>
+        <Link href="/dashboard">
+          <button className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
+            Create a new flowchart
+          </button>
+        </Link>
+        <Link href="/signup">
+          <button className="border border-foreground/20 px-6 py-3 rounded-xl hover:bg-foreground/10 transition-colors">
+            Sign Up
+          </button>
+        </Link>
       </div>
       <HeroImage />
     </section>
