@@ -1,14 +1,19 @@
 "use client";
 
-import { Button } from "@/components/ui/Button";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Loading from "@/components/ui/Loading";
 
 export default function DashboardPage() {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-24">
-      <h1 className="text-4xl font-bold text-black text-center mb-8">
-        Welcome to your Dashboard
-      </h1>
-      <Button>Create a new flowchart</Button>
-    </div>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push("/flowchart");
+    }, 3000); 
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
+  return <Loading />;
 }
