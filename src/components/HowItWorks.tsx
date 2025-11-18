@@ -1,4 +1,3 @@
-
 const steps = [
   {
     name: "Create an account",
@@ -19,7 +18,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-20 sm:py-32">
+    <section className="py-16 sm:py-24 bg-[var(--light-purple)]">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
           How it works
@@ -28,13 +27,13 @@ export function HowItWorks() {
           Getting started with GradFlo is easy.
         </p>
       </div>
-      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+      <div className="mt-16 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {steps.map((step, i) => (
-          <div key={step.name} className="flex flex-col items-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-primary rounded-full text-xl font-bold text-white">
+          <div key={step.name} className="bg-white p-8 rounded-2xl shadow-md">
+            <div className="flex items-center justify-center w-16 h-16 bg-primary rounded-full text-3xl font-bold text-white">
               {i + 1}
             </div>
-            <h3 className="mt-6 text-xl font-bold text-foreground">{step.name}</h3>
+            <h3 className="mt-6 text-2xl font-bold text-foreground">{step.name}</h3>
             <p className="mt-2 text-foreground/70">{step.description}</p>
           </div>
         ))}

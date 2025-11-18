@@ -61,7 +61,7 @@ export default function SignupPage() {
   }, [step, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-24">
+    <div className="min-h-screen flex items-center justify-center">
       {step === 3 ? (
         <Welcome name={name} />
       ) : (
@@ -73,10 +73,10 @@ export default function SignupPage() {
           >
             {step === 1 && (
               <div>
-                <h1 className="text-3xl font-bold text-black text-center mb-4">
+                <h1 className="text-3xl font-bold text-foreground text-center mb-4">
                   Create an Account
                 </h1>
-                <p className="text-black/60 text-center mb-8">
+                <p className="text-foreground/60 text-center mb-8">
                   Already have an account?{" "}
                   <Link href="/login" className="text-[var(--primary)] hover:opacity-90">
                     Log in
@@ -122,10 +122,10 @@ export default function SignupPage() {
 
             {step === 2 && (
               <div>
-                <h1 className="text-3xl font-bold text-black text-center mb-4">
+                <h1 className="text-3xl font-bold text-foreground text-center mb-4">
                   Tell us about yourself
                 </h1>
-                <p className="text-black/60 text-center mb-8">
+                <p className="text-foreground/60 text-center mb-8">
                   This will help us personalize your experience.
                 </p>
                 <form onSubmit={handleSubmit}>
@@ -157,7 +157,7 @@ export default function SignupPage() {
                         ))}
                   </Select>
                   <div className="mt-8 grid grid-cols-2 gap-4">
-                    <Button type="button" onClick={handleBack}>
+                    <Button type="button" onClick={handleBack} variant="secondary">
                       Back
                     </Button>
                     <Button type="submit">Sign Up</Button>

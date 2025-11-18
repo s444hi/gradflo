@@ -75,7 +75,7 @@ const features = [
 
 export function Features() {
   return (
-    <section className="py-20 sm:py-32 bg-light-purple">
+    <section className="py-24 sm:py-32 bg-[var(--light-purple)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
@@ -85,14 +85,16 @@ export function Features() {
             GradFlo is packed with features to help you succeed in college.
           </p>
         </div>
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature) => (
             <div
               key={feature.name}
-              className="bg-foreground/5 p-8 rounded-2xl border border-foreground/10"
+              className="bg-white p-8 rounded-2xl shadow-md"
             >
-              <div className="text-primary">{feature.icon}</div>
-              <h3 className="mt-4 text-xl font-bold text-foreground">
+              <div className="flex items-center justify-center w-16 h-16 bg-primary rounded-full text-white">
+                {feature.icon}
+              </div>
+              <h3 className="mt-6 text-2xl font-bold text-foreground">
                 {feature.name}
               </h3>
               <p className="mt-2 text-foreground/70">{feature.description}</p>

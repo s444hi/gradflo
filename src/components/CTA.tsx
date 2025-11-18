@@ -1,7 +1,9 @@
+import { Button } from "./ui/Button";
+import Link from "next/link";
 
 export function CTA() {
   return (
-    <section className="py-20 sm:py-32 text-center bg-light-purple">
+    <section className="py-24 sm:py-32 text-center bg-[var(--light-purple)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-4xl sm:text-5xl font-bold text-foreground">
           Ready to get started?
@@ -11,9 +13,11 @@ export function CTA() {
           college career.
         </p>
         <div className="mt-8">
-          <button className="bg-primary text-white px-8 py-4 rounded-xl font-semibold hover:bg-primary/90 transition-colors text-lg">
-            Sign Up Now
-          </button>
+          <Link href="/signup">
+            <Button>
+              Sign Up Now
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

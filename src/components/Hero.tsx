@@ -1,9 +1,10 @@
 import { HeroImage } from "./HeroImage";
 import Link from "next/link";
+import { Button } from "./ui/Button";
 
 export function Hero() {
   return (
-    <section className="text-center py-20 sm:py-32">
+    <section className="text-center py-16 sm:py-24">
       <h1 className="text-5xl sm:text-7xl font-bold text-foreground">
       Build your college roadmap in minutes, not semesters.
       </h1>
@@ -14,17 +15,21 @@ export function Hero() {
 
       <div className="flex justify-center gap-4 mt-8">
         <Link href="/dashboard">
-          <button className="bg-primary text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary/90 transition-colors">
+          <Button>
             Create a new flowchart
-          </button>
+          </Button>
         </Link>
         <Link href="/signup">
-          <button className="border border-foreground/20 px-6 py-3 rounded-xl hover:bg-foreground/10 transition-colors">
+          <Button variant="secondary">
             Sign Up
-          </button>
+          </Button>
         </Link>
       </div>
-      <HeroImage />
+      <div className="mt-16 w-full flex justify-center">
+        <div className="w-[1200px]">
+          <HeroImage />
+        </div>
+      </div>
     </section>
   );
 }
