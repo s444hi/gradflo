@@ -1,5 +1,6 @@
 
 import React from 'react';
+import ProfileDropdown from '@/components/ui/ProfileDropdown';
 
 const FlowchartPage = () => {
   return (
@@ -21,8 +22,9 @@ const FlowchartPage = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="p-4 border-b bg-white">
+        <div className="p-4 border-b bg-white flex justify-between items-center">
           <h1 className="text-2xl font-bold">Create your flowchart</h1>
+          <ProfileDropdown />
         </div>
         <div className="flex-1 p-8 bg-gray-200">
           {/* Canvas for flowchart */}
