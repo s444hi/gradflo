@@ -4,27 +4,12 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { Testimonial } from "@/components/Testimonial";
 import { CTA } from "@/components/CTA";
 import { AnimatedSection } from "@/components/AnimatedSection";
+import LoadingScreen from "@/components/LoadingScreen"; // Import the LoadingScreen component
 
 export default function Home() {
   return (
     <main>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Hero />
-      </div>
-      <AnimatedSection>
-        <Features />
-      </AnimatedSection>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AnimatedSection>
-          <HowItWorks />
-        </AnimatedSection>
-        <AnimatedSection>
-          <Testimonial />
-        </AnimatedSection>
-      </div>
-      <AnimatedSection>
-        <CTA />
-      </AnimatedSection>
+      <LoadingScreen />
     </main>
   );
 }
