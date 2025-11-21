@@ -1,25 +1,18 @@
 
-import React from 'react';
+"use client";
+import React, { useState } from 'react';
 import ProfileDropdown from '@/components/ui/ProfileDropdown';
+import { undergraduateMajors } from '@/lib/majors';
+import { roadmaps } from '@/lib/roadmaps';
+import RoadmapDisplay from '@/components/RoadmapDisplay';
 
 const FlowchartPage = () => {
-  return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-md">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-bold">Flowchart</h2>
-        </div>
-        <div className="p-4">
-          <h3 className="font-semibold text-gray-700 mb-2">Colleges</h3>
-          {/* Placeholder for colleges */}
-          <div className="p-2 bg-gray-200 rounded-md mb-4">College List</div>
-          <h3 className="font-semibold text-gray-700 mb-2">Courses</h3>
-          {/* Placeholder for courses */}
-          <div className="p-2 bg-gray-200 rounded-md">Course List</div>
-        </div>
-      </div>
+  const [selectedMajor, setSelectedMajor] = useState<string | null>("Computer Science and Linguistics, BS");
 
+  const selectedRoadmap = roadmaps.find(r => r.major === selectedMajor);
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-100">
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <div className="p-4 border-b bg-white flex justify-between items-center">
@@ -27,10 +20,25 @@ const FlowchartPage = () => {
           <ProfileDropdown />
         </div>
         <div className="flex-1 p-8 bg-gray-200">
-          {/* Canvas for flowchart */}
-          <div className="w-full h-full bg-white rounded-md shadow-md">
-            {/* Placeholder for flowchart content */}
-            <p className="text-center p-4 text-gray-500">Flowchart canvas</p>
+          <div className="w-full max-w-4xl mx-auto">
+            <select
+              onChange={(e) => setSelectedMajor(e.target.value)}
+              value={selectedMajor || ''}
+              className="w-full p-2 mb-8 border rounded-md"
+            >
+              <option value="" disabled>Select a major</option>
+              {undergraduateMajors.map(major => (
+                <option key={major} value={major}>{major}</option>
+              ))}
+            </select>
+
+            {selectedRoadmap ? (
+              <RoadmapDisplay roadmap={selectedRoadmap} />
+            ) : (
+              <div className="bg-white rounded-md shadow-md p-8 text-center text-gray-500">
+                <p>Please select a major to see the roadmap.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
