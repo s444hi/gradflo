@@ -1,84 +1,263 @@
-
 import React from 'react';
-import { Roadmap, Course } from '@/lib/roadmaps';
+import { Roadmap } from '@/lib/roadmaps';
+import { softPrerequisites } from '@/lib/softPrerequisites';
 
 interface RoadmapProps {
   roadmap: Roadmap;
-  selectedYears: string[];
 }
 
-const yearMap: { [key: string]: number } = {
-  "Freshman": 1,
-  "Sophomore": 2,
-  "Junior": 3,
-  "Senior": 4,
+type Node = {
+  id: string;
+  code: string;
+  title: string;
+  credits: number;
+  x: number;
+  y: number;
+  tone?: "major" | "ge" | "science";
 };
 
-const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap, selectedYears }) => {
-  const selectedYearNumbers = selectedYears.map(y => yearMap[y]);
-  const displayedYears = roadmap.years.filter(y => selectedYearNumbers.includes(parseInt(y.name.split(' ')[1])));
+type Edge = {
+  from: string;
+  to: string;
+  bend?: number;
+};
 
+const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
   const allCourses = roadmap.years.flatMap(y => y.semesters.flatMap(s => s.courses));
-  const courseMap = new Map<string, Course>(allCourses.map(c => [c.id, c]));
 
-  const displayedCourses = displayedYears.flatMap(y => y.semesters.flatMap(s => s.courses));
+  // Combine real and soft prerequisites
+  const combinedPrerequisites: { from: string; to: string }[] = [];
+
+  // Add real prerequisites
+  allCourses.forEach(course => {
+    course.prerequisites.forEach(prereqId => {
+      combinedPrerequisites.push({ from: prereqId, to: course.id });
+    });
+  });
+
+  // Add soft prerequisites, filtering out duplicates and ensuring courses exist
+  softPrerequisites.forEach(softPrereq => {
+    const fromCourseExists = allCourses.some(c => c.id === softPrereq.from);
+    const toCourseExists = allCourses.some(c => c.id === softPrereq.to);
+    const isDuplicate = combinedPrerequisites.some(
+      p => p.from === softPrereq.from && p.to === softPrereq.to
+    );
+
+    if (fromCourseExists && toCourseExists && !isDuplicate) {
+      combinedPrerequisites.push(softPrereq);
+    }
+  });
+
+  // Build a graph representation for layout
+  const nodesMap = new Map(allCourses.map(c => [c.id, { ...c, incomingEdges: new Set<string>(), outgoingEdges: new Set<string>(), level: -1 }]));
+
+  combinedPrerequisites.forEach(({ from, to }) => {
+    const fromNode = nodesMap.get(from);
+    const toNode = nodesMap.get(to);
+    if (fromNode && toNode) {
+      fromNode.outgoingEdges.add(to);
+      toNode.incomingEdges.add(from);
+    }
+  });
+
+  // Topological sort and level assignment
+  const levels: string[][] = [];
+  let currentLevelNodes: string[] = allCourses
+    .filter(c => nodesMap.get(c.id)?.incomingEdges.size === 0)
+    .map(c => c.id);
+
+  const visited = new Set<string>();
+
+  while (currentLevelNodes.length > 0) {
+    // Sort nodes within the level for consistent ordering
+    currentLevelNodes.sort((a, b) => {
+      const courseA = allCourses.find(c => c.id === a);
+      const courseB = allCourses.find(c => c.id === b);
+      if (!courseA || !courseB) return 0;
+
+      // Sort by year, then semester, then original order
+      const yearA = roadmap.years.findIndex(y => y.semesters.some(s => s.courses.some(c => c.id === a)));
+      const yearB = roadmap.years.findIndex(y => y.semesters.some(s => s.courses.some(c => c.id === b)));
+      if (yearA !== yearB) return yearA - yearB;
+
+      const semA = roadmap.years.flatMap(y => y.semesters).findIndex(s => s.courses.some(c => c.id === a));
+      const semB = roadmap.years.flatMap(y => y.semesters).findIndex(s => s.courses.some(c => c.id === b));
+      if (semA !== semB) return semA - semB;
+
+      return allCourses.indexOf(courseA) - allCourses.indexOf(courseB);
+    });
+
+    levels.push(currentLevelNodes);
+    currentLevelNodes.forEach(nodeId => visited.add(nodeId));
+
+    const nextLevelCandidates = new Set<string>();
+    currentLevelNodes.forEach(nodeId => {
+      const node = nodesMap.get(nodeId);
+      if (node) {
+        node.outgoingEdges.forEach(nextCourseId => {
+          if (!visited.has(nextCourseId)) {
+            const nextCourseNode = nodesMap.get(nextCourseId);
+            if (nextCourseNode) {
+              const allPrereqsVisited = Array.from(nextCourseNode.incomingEdges).every(prereqId => visited.has(prereqId));
+              if (allPrereqsVisited) {
+                nextLevelCandidates.add(nextCourseId);
+              }
+            }
+          }
+        });
+      }
+    });
+    currentLevelNodes = Array.from(nextLevelCandidates);
+  }
+
+  // Assign levels to nodes
+  levels.forEach((levelNodes, levelIndex) => {
+    levelNodes.forEach(nodeId => {
+      const node = nodesMap.get(nodeId);
+      if (node) {
+        node.level = levelIndex;
+      }
+    });
+  });
+
+  const CARD_W = 220; // Reduced card width
+  const CARD_H = 100; // Reduced card height
+  const LEVEL_GAP_X = 280; // Reduced horizontal gap
+  const NODE_GAP_Y = 120; // Reduced vertical gap
+  const PADDING = 20; // Reduced padding
+
+  // Calculate positions
+  const positionedNodes: Node[] = [];
+  const levelYOffsets: { [key: number]: number } = {}; // To track vertical position for each level
+
+  levels.forEach((levelNodes, levelIndex) => {
+    let currentY = PADDING;
+    levelNodes.forEach(nodeId => {
+      const course = allCourses.find(c => c.id === nodeId);
+      if (course) {
+        positionedNodes.push({
+          id: course.id,
+          code: course.id.toUpperCase(),
+          title: course.name,
+          credits: parseInt(course.units),
+          x: levelIndex * LEVEL_GAP_X + PADDING,
+          y: currentY,
+          tone: course.type === 'major' ? 'major' : course.type === 'ge' ? 'ge' : 'science',
+        });
+        currentY += CARD_H + NODE_GAP_Y;
+      }
+    });
+    levelYOffsets[levelIndex] = currentY;
+  });
+
+  const nodes = positionedNodes; // Use the newly positioned nodes
+
+  const edges: Edge[] = combinedPrerequisites.map(prereq => ({
+    from: prereq.from,
+    to: prereq.to,
+    bend: Math.random() * 0.5 - 0.25, // Keep random bend for visual variety
+  }));
+
+  const getNode = (id: string) => {
+    const n = nodes.find(n => n.id === id);
+    if (!n) {
+      console.warn(`Node with id ${id} not found for edge rendering.`);
+      return { id, code: id, title: "Unknown", credits: 0, x: 0, y: 0 }; // Dummy node
+    }
+    return n;
+  };
+
+  const anchorBottomCenter = (n: Node) => ({ x: n.x + CARD_W / 2, y: n.y + CARD_H });
+  const anchorTopCenter = (n: Node) => ({ x: n.x + CARD_W / 2, y: n.y });
+
+  function edgePath(e: Edge) {
+    try {
+      const from = getNode(e.from);
+      const to = getNode(e.to);
+      if (from.title === "Unknown" || to.title === "Unknown") return '';
+
+      const p1 = anchorBottomCenter(from);
+      const p2 = anchorTopCenter(to);
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const bend = (e.bend ?? 0) * 0.75;
+      const c1 = { x: p1.x + dx * 0.25 + (dy * bend), y: p1.y + dy * 0.25 };
+      const c2 = { x: p1.x + dx * 0.75 + (dy * bend), y: p1.y + dy * 0.75 };
+      return `M ${p1.x},${p1.y} C ${c1.x},${c1.y} ${c2.x},${c2.y} ${p2.x},${p2.y}`;
+    } catch (error) {
+      console.error(error);
+      return '';
+    }
+  }
+
+  const toneClasses: Record<NonNullable<Node["tone"]>, string> = {
+    major: "bg-primary/10 border-primary/30 shadow-[0_8px_20px_-10px_rgba(71,28,225,0.15)] dark:bg-primary/5 dark:border-primary/30",
+    ge: "bg-gray-50/40 border-gray-200/40 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.05)] dark:bg-gray-900/20 dark:border-gray-800/40",
+    science: "bg-gray-50/40 border-gray-200/40 shadow-[0_8px_20px_-10px_rgba(0,0,0,0.05)] dark:bg-gray-900/20 dark:border-gray-800/40"
+  };
+
+  const toneTextClasses: Record<NonNullable<Node["tone"]>, string> = {
+    major: "text-primary dark:text-primary",
+    ge: "text-gray-800/90 dark:text-gray-300/90",
+    science: "text-gray-800/90 dark:text-gray-300/90"
+  };
+
+  const maxBounds = nodes.reduce((acc, node) => ({
+    width: Math.max(acc.width, node.x + CARD_W),
+    height: Math.max(acc.height, node.y + CARD_H)
+  }), { width: 0, height: 0 });
 
   return (
-    <div className="relative w-full h-[1000px] bg-gray-50 p-8">
-      {displayedCourses.map(course => (
-        <div
-          key={course.id}
-          id={course.id}
-          className="absolute bg-white p-4 rounded-lg shadow-md border border-gray-200 w-64"
-          style={{ left: course.position.x, top: course.position.y }}
-        >
-          <h4 className="text-lg font-bold text-foreground">{course.name}</h4>
-          <p className="text-sm text-foreground/70">{course.units}</p>
-          {course.description && (
-            <p className="text-xs text-foreground/60 mt-1">{course.description}</p>
-          )}
-        </div>
-      ))}
-      <svg className="absolute top-0 left-0 w-full h-full" style={{ zIndex: 0 }}>
-        {allCourses.map(course => {
-          return course.prerequisites.map(prereqId => {
-            const prereqCourse = courseMap.get(prereqId);
-            if (!prereqCourse) return null;
+    <div className="mt-8 w-full flex items-center justify-center">
+      <div className="relative rounded-3xl p-4" style={{ width: maxBounds.width + PADDING * 2, height: maxBounds.height + PADDING * 2 }}>
+        <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="edgeGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="rgba(156, 163, 175, 0.5)" />
+              <stop offset="100%" stopColor="rgba(209, 213, 219, 0.3)" />
+            </linearGradient>
+            <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(156, 163, 175, 0.5)" />
+            </marker>
+          </defs>
 
-            const startX = prereqCourse.position.x + 256; // width of course box
-            const startY = prereqCourse.position.y + 50; // middle of course box
-            const endX = course.position.x;
-            const endY = course.position.y + 50;
+          {edges.map((e, i) => (
+            <path
+              key={i}
+              d={edgePath(e)}
+              fill="none"
+              stroke="url(#edgeGradient)"
+              strokeWidth={2}
+              markerEnd="url(#arrowHead)"
+            />
+          ))}
+        </svg>
 
-            return (
-              <line
-                key={`${prereqId}-${course.id}`}
-                x1={startX}
-                y1={startY}
-                x2={endX}
-                y2={endY}
-                stroke="#9CA3AF"
-                strokeWidth="2"
-                markerEnd="url(#arrow)"
-              />
-            );
-          });
-        })}
-      </svg>
-      <svg width="0" height="0">
-        <defs>
-          <marker
-            id="arrow"
-            markerWidth="10"
-            markerHeight="10"
-            refX="5"
-            refY="5"
-            orient="auto"
+        {nodes.map((n) => (
+          <div
+            key={n.id}
+            className={[
+              "absolute rounded-xl border backdrop-blur-sm transition-all opacity-80",
+              "hover:scale-[1.02]",
+              toneClasses[n.tone ?? "ge"]
+            ].join(" ")}
+            style={{ left: n.x, top: n.y, width: CARD_W, height: CARD_H }}
           >
-            <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF" />
-          </marker>
-        </defs>
-      </svg>
+            <div className="flex h-full flex-col justify-between p-4">
+              <div>
+                <div className={["text-[11px] font-semibold tracking-wide", toneTextClasses[n.tone ?? "ge"]].join(" ")}>
+                  {n.code}
+                </div>
+                <div className="mt-1 text-[16px] font-semibold leading-5 text-gray-950">
+                  {n.title}
+                </div>
+              </div>
+              <div className="text-xs text-zinc-600 dark:text-zinc-400">{n.credits} credits</div>
+            </div>
+            <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/20 [mask-image:radial-gradient(60px_40px_at_0_0,black,transparent)]" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
