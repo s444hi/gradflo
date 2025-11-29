@@ -120,19 +120,21 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
     });
   });
 
-  const CARD_W = 220; // Reduced card width
-  const CARD_H = 100; // Reduced card height
-  const LEVEL_GAP_X = 280; // Reduced horizontal gap
-  const NODE_GAP_Y = 120; // Reduced vertical gap
-  const PADDING = 20; // Reduced padding
+  const CARD_W = 220;
+  const CARD_H = 100;
+  const LEVEL_GAP_Y = 150; // Vertical gap between levels
+  const NODE_GAP_X = 250; // Horizontal gap between nodes in the same level
+  const PADDING = 50;
 
   // Calculate positions
   const positionedNodes: Node[] = [];
-  const levelYOffsets: { [key: number]: number } = {}; // To track vertical position for each level
+  const maxLevelWidth = Math.max(...levels.map(level => level.length * NODE_GAP_X));
 
   levels.forEach((levelNodes, levelIndex) => {
-    let currentY = PADDING;
-    levelNodes.forEach(nodeId => {
+    const levelWidth = levelNodes.length * NODE_GAP_X;
+    const xOffset = (maxLevelWidth - levelWidth) / 2;
+
+    levelNodes.forEach((nodeId, nodeIndex) => {
       const course = allCourses.find(c => c.id === nodeId);
       if (course) {
         positionedNodes.push({
@@ -140,29 +142,27 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
           code: course.id.toUpperCase(),
           title: course.name,
           credits: parseInt(course.units),
-          x: levelIndex * LEVEL_GAP_X + PADDING,
-          y: currentY,
+          x: xOffset + nodeIndex * NODE_GAP_X + PADDING,
+          y: levelIndex * (CARD_H + LEVEL_GAP_Y) + PADDING,
           tone: course.type === 'major' ? 'major' : course.type === 'ge' ? 'ge' : 'science',
         });
-        currentY += CARD_H + NODE_GAP_Y;
       }
     });
-    levelYOffsets[levelIndex] = currentY;
   });
 
-  const nodes = positionedNodes; // Use the newly positioned nodes
+  const nodes = positionedNodes;
 
   const edges: Edge[] = combinedPrerequisites.map(prereq => ({
     from: prereq.from,
     to: prereq.to,
-    bend: Math.random() * 0.5 - 0.25, // Keep random bend for visual variety
+    bend: Math.random() * 0.4 - 0.2,
   }));
 
   const getNode = (id: string) => {
     const n = nodes.find(n => n.id === id);
     if (!n) {
       console.warn(`Node with id ${id} not found for edge rendering.`);
-      return { id, code: id, title: "Unknown", credits: 0, x: 0, y: 0 }; // Dummy node
+      return { id, code: id, title: "Unknown", credits: 0, x: 0, y: 0 };
     }
     return n;
   };
@@ -208,7 +208,7 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
   }), { width: 0, height: 0 });
 
   return (
-    <div className="mt-8 w-full flex items-center justify-center">
+    <div className="mt-8 w-full flex items-center justify-center overflow-auto">
       <div className="relative rounded-3xl p-4" style={{ width: maxBounds.width + PADDING * 2, height: maxBounds.height + PADDING * 2 }}>
         <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -243,12 +243,12 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
             ].join(" ")}
             style={{ left: n.x, top: n.y, width: CARD_W, height: CARD_H }}
           >
-            <div className="flex h-full flex-col justify-between p-4">
+            <div className="flex h-full flex-col justify-between p-3">
               <div>
-                <div className={["text-[11px] font-semibold tracking-wide", toneTextClasses[n.tone ?? "ge"]].join(" ")}>
+                <div className={["text-[10px] font-semibold tracking-wide", toneTextClasses[n.tone ?? "ge"]].join(" ")}>
                   {n.code}
                 </div>
-                <div className="mt-1 text-[16px] font-semibold leading-5 text-gray-950">
+                <div className="mt-1 text-sm font-semibold leading-tight text-gray-950">
                   {n.title}
                 </div>
               </div>
