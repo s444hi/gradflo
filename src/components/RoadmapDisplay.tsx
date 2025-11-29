@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Roadmap } from '@/lib/roadmaps';
 import { softPrerequisites } from '@/lib/softPrerequisites';
+import InteractiveWorkspace from './InteractiveWorkspace';
 
 interface RoadmapProps {
   roadmap: Roadmap;
@@ -23,6 +24,20 @@ type Edge = {
 };
 
 const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
+  const [takenCourses, setTakenCourses] = useState(new Set<string>());
+
+  const handleCourseClick = (courseId: string) => {
+    setTakenCourses(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(courseId)) {
+        newSet.delete(courseId);
+      } else {
+        newSet.add(courseId);
+      }
+      return newSet;
+    });
+  };
+
   const allCourses = roadmap.years.flatMap(y => y.semesters.flatMap(s => s.courses));
 
   // Combine real and soft prerequisites
@@ -201,6 +216,8 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
     ge: "text-gray-800/90 dark:text-gray-300/90",
     science: "text-gray-800/90 dark:text-gray-300/90"
   };
+  
+  const takenClasses = "bg-green-100/70 border-green-400/50 dark:bg-green-900/20 dark:border-green-700/40";
 
   const maxBounds = nodes.reduce((acc, node) => ({
     width: Math.max(acc.width, node.x + CARD_W),
@@ -208,56 +225,69 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
   }), { width: 0, height: 0 });
 
   return (
-    <div className="mt-8 w-full flex items-center justify-center overflow-auto">
-      <div className="relative rounded-3xl p-4" style={{ width: maxBounds.width + PADDING * 2, height: maxBounds.height + PADDING * 2 }}>
-        <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="edgeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(156, 163, 175, 0.5)" />
-              <stop offset="100%" stopColor="rgba(209, 213, 219, 0.3)" />
-            </linearGradient>
-            <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(156, 163, 175, 0.5)" />
-            </marker>
-          </defs>
+    <div className="mt-8 w-full flex items-center justify-center">
+      <InteractiveWorkspace contentWidth={maxBounds.width + PADDING * 2} contentHeight={maxBounds.height + PADDING * 2}>
+        <div className="relative rounded-3xl p-4" style={{ width: maxBounds.width + PADDING * 2, height: maxBounds.height + PADDING * 2 }}>
+          <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="edgeGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(156, 163, 175, 0.5)" />
+                <stop offset="100%" stopColor="rgba(209, 213, 219, 0.3)" />
+              </linearGradient>
+              <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(156, 163, 175, 0.5)" />
+              </marker>
+            </defs>
 
-          {edges.map((e, i) => (
-            <path
-              key={i}
-              d={edgePath(e)}
-              fill="none"
-              stroke="url(#edgeGradient)"
-              strokeWidth={2}
-              markerEnd="url(#arrowHead)"
-            />
-          ))}
-        </svg>
+            {edges.map((e, i) => (
+              <path
+                key={i}
+                d={edgePath(e)}
+                fill="none"
+                stroke="url(#edgeGradient)"
+                strokeWidth={2}
+                markerEnd="url(#arrowHead)"
+              />
+            ))}
+          </svg>
 
-        {nodes.map((n) => (
-          <div
-            key={n.id}
-            className={[
-              "absolute rounded-xl border backdrop-blur-sm transition-all opacity-80",
-              "hover:scale-[1.02]",
-              toneClasses[n.tone ?? "ge"]
-            ].join(" ")}
-            style={{ left: n.x, top: n.y, width: CARD_W, height: CARD_H }}
-          >
-            <div className="flex h-full flex-col justify-between p-3">
-              <div>
-                <div className={["text-[10px] font-semibold tracking-wide", toneTextClasses[n.tone ?? "ge"]].join(" ")}>
-                  {n.code}
+          {nodes.map((n) => {
+            const isTaken = takenCourses.has(n.id);
+            return (
+              <div
+                key={n.id}
+                onClick={() => handleCourseClick(n.id)}
+                className={[
+                  "absolute rounded-xl border backdrop-blur-sm transition-all cursor-pointer",
+                  "hover:scale-[1.02]",
+                  isTaken ? takenClasses : toneClasses[n.tone ?? "ge"]
+                ].join(" ")}
+                style={{ left: n.x, top: n.y, width: CARD_W, height: CARD_H }}
+              >
+                <div className="flex h-full flex-col justify-between p-3">
+                  <div>
+                    <div className={["text-[10px] font-semibold tracking-wide", toneTextClasses[n.tone ?? "ge"]].join(" ")}>
+                      {n.code}
+                    </div>
+                    <div className="mt-1 text-sm font-semibold leading-tight text-gray-950">
+                      {n.title}
+                    </div>
+                  </div>
+                  <div className="text-xs text-zinc-600 dark:text-zinc-400">{n.credits} credits</div>
                 </div>
-                <div className="mt-1 text-sm font-semibold leading-tight text-gray-950">
-                  {n.title}
-                </div>
+                {isTaken && (
+                  <div className="absolute top-2 right-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+                <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/20 [mask-image:radial-gradient(60px_40px_at_0_0,black,transparent)]" />
               </div>
-              <div className="text-xs text-zinc-600 dark:text-zinc-400">{n.credits} credits</div>
-            </div>
-            <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/20 [mask-image:radial-gradient(60px_40px_at_0_0,black,transparent)]" />
-          </div>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      </InteractiveWorkspace>
     </div>
   );
 };

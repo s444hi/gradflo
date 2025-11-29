@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import ProfileDropdown from "./ui/ProfileDropdown";
 
 export function Navbar() {
+  // TODO: Add logic to conditionally render ProfileDropdown or Log In/Sign Up based on auth status
+  const isLoggedIn = true;
+
   return (
     <nav className="flex w-full items-center justify-between py-2 border-b border-foreground/10 px-8">
       <div className="flex items-center gap-8">
@@ -21,12 +25,18 @@ export function Navbar() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <Link href="/login" className="text-foreground/80 hover:text-primary transition-colors">
-          Log In
-        </Link>
-        <Link href="/signup" className="bg-primary text-white px-5 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
-          Sign Up
-        </Link>
+        {isLoggedIn ? (
+          <ProfileDropdown />
+        ) : (
+          <>
+            <Link href="/login" className="text-foreground/80 hover:text-primary transition-colors">
+              Log In
+            </Link>
+            <Link href="/signup" className="bg-primary text-white px-5 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+              Sign Up
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );

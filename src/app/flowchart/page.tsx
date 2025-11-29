@@ -1,34 +1,33 @@
 "use client";
-import React, { useState } from 'react';
-import ProfileDropdown from '@/components/ui/ProfileDropdown';
-import { undergraduateMajors } from '@/lib/majors';
+import React, { useState, useEffect } from 'react';
 import { roadmaps } from '@/lib/roadmaps';
 import RoadmapDisplay from '@/components/RoadmapDisplay';
 
 const FlowchartPage = () => {
-  const [selectedMajor, setSelectedMajor] = useState<string | null>("Computer Science and Linguistics, BS");
-
+  // Hardcoded major for now, this should be fetched based on the user's data
+  const selectedMajor = "Computer Science and Linguistics, BS";
   const selectedRoadmap = roadmaps.find(r => r.major === selectedMajor);
+  const userName = "Alex"; // Hardcoded user name
+  const [opacity, setOpacity] = useState(0);
+
+  useEffect(() => {
+    // Trigger fade-in after component mounts
+    const timer = setTimeout(() => setOpacity(1), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <div className="p-4 border-b bg-white flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Create your flowchart</h1>
-        <ProfileDropdown />
-      </div>
-
-      <div className="flex-1 flex flex-col justify-center items-center bg-white p-4">
-        <div className="w-full max-w-4xl mx-auto">
-          <select
-            onChange={(e) => setSelectedMajor(e.target.value)}
-            value={selectedMajor || ''}
-            className="w-full p-3 mb-8 border rounded-md shadow-sm"
+    <div className="flex flex-col min-h-screen bg-white">
+      <div className="flex-1 flex flex-col items-center bg-white p-4">
+        <div className="w-full max-w-6xl mx-auto text-center my-12">
+          <h1
+            className="text-4xl md:text-6xl font-bold tracking-tighter text-gray-900 transition-opacity duration-1000 ease-in"
+            style={{ opacity: opacity }}
           >
-            <option value="" disabled>Select a major</option>
-            {undergraduateMajors.map(major => (
-              <option key={major} value={major}>{major}</option>
-            ))}
-          </select>
+            Welcome, {userName}.
+            <br />
+            Your future is in your hands.
+          </h1>
         </div>
 
         {selectedRoadmap ? (
@@ -37,7 +36,7 @@ const FlowchartPage = () => {
           </div>
         ) : (
           <div className="bg-white rounded-md shadow-md p-8 text-center text-gray-500 max-w-4xl mx-auto">
-            <p>Please select a major to see the roadmap.</p>
+            <p>Could not find a roadmap for the selected major.</p>
           </div>
         )}
       </div>
