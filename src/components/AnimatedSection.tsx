@@ -7,7 +7,7 @@ export function AnimatedSection({ children }: { children: ReactNode }) {
 
   return (
     <div
-      ref={ref as any}
+      ref={ref}
       className={`transition-all duration-1000 ${
         isIntersecting ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
       }`}

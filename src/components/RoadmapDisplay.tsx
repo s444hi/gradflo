@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Roadmap } from '@/lib/roadmaps';
 import { softPrerequisites } from '@/lib/softPrerequisites';
 import InteractiveWorkspace from './InteractiveWorkspace';
@@ -38,35 +38,39 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
     });
   };
 
-  const allCourses = roadmap.years.flatMap(y => y.semesters.flatMap(s => s.courses));
+  const allCourses = useMemo(() => {
+    return roadmap.years.flatMap(y => y.semesters.flatMap(s => s.courses));
+  }, [roadmap]);
 
-  // Combine real and soft prerequisites
-  const combinedPrerequisites: { from: string; to: string }[] = [];
+  const combinedPrerequisitesWithBends: Edge[] = useMemo(() => {
+    const prerequisites: Edge[] = [];
 
-  // Add real prerequisites
-  allCourses.forEach(course => {
-    course.prerequisites.forEach(prereqId => {
-      combinedPrerequisites.push({ from: prereqId, to: course.id });
+    // Add real prerequisites
+    allCourses.forEach(course => {
+      course.prerequisites.forEach(prereqId => {
+        prerequisites.push({ from: prereqId, to: course.id, bend: 0 });
+      });
     });
-  });
 
-  // Add soft prerequisites, filtering out duplicates and ensuring courses exist
-  softPrerequisites.forEach(softPrereq => {
-    const fromCourseExists = allCourses.some(c => c.id === softPrereq.from);
-    const toCourseExists = allCourses.some(c => c.id === softPrereq.to);
-    const isDuplicate = combinedPrerequisites.some(
-      p => p.from === softPrereq.from && p.to === softPrereq.to
-    );
+    // Add soft prerequisites, filtering out duplicates and ensuring courses exist
+    softPrerequisites.forEach(softPrereq => {
+      const fromCourseExists = allCourses.some(c => c.id === softPrereq.from);
+      const toCourseExists = allCourses.some(c => c.id === softPrereq.to);
+      const isDuplicate = prerequisites.some(
+        p => p.from === softPrereq.from && p.to === softPrereq.to
+      );
 
-    if (fromCourseExists && toCourseExists && !isDuplicate) {
-      combinedPrerequisites.push(softPrereq);
-    }
-  });
+      if (fromCourseExists && toCourseExists && !isDuplicate) {
+        prerequisites.push({ ...softPrereq, bend: 0 });
+      }
+    });
+    return prerequisites;
+  }, [allCourses]);
 
   // Build a graph representation for layout
   const nodesMap = new Map(allCourses.map(c => [c.id, { ...c, incomingEdges: new Set<string>(), outgoingEdges: new Set<string>(), level: -1 }]));
 
-  combinedPrerequisites.forEach(({ from, to }) => {
+  combinedPrerequisitesWithBends.forEach(({ from, to }) => {
     const fromNode = nodesMap.get(from);
     const toNode = nodesMap.get(to);
     if (fromNode && toNode) {
@@ -167,11 +171,7 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
 
   const nodes = positionedNodes;
 
-  const edges: Edge[] = combinedPrerequisites.map(prereq => ({
-    from: prereq.from,
-    to: prereq.to,
-    bend: Math.random() * 0.4 - 0.2,
-  }));
+  const edges: Edge[] = combinedPrerequisitesWithBends;
 
   const getNode = (id: string) => {
     const n = nodes.find(n => n.id === id);

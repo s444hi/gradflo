@@ -10,7 +10,8 @@ export function Navbar() {
     <nav className="flex w-full items-center justify-between py-2 border-b border-foreground/10 px-8">
       <div className="flex items-center gap-8">
         <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-foreground">
-          <Image src="/gradflologo1.png" alt="GradFlo Logo" width={120} height={120} />
+          <Image src="/gradflologo1.png" alt="GradFlo Logo" width={40} height={40} />
+          <span>GradFlo</span>
         </Link>
         <div className="hidden md:flex items-center gap-6 text-lg">
           <Link href="#" className="text-foreground/80 hover:text-primary transition-colors">
