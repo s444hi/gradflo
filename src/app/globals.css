@@ -74,4 +74,32 @@ body {
       radial-gradient(at 100% 100%, hsla(200, 100%, 98%, 1) 0, transparent 50%),
       radial-gradient(at 0% 100%, hsla(210, 100%, 96%, 1) 0, transparent 50%);
   }
+
+  .animate-scroll {
+    animation: scroll 40s linear infinite;
+  }
+
+  .animate-scroll-reverse {
+    animation: scroll-reverse 40s linear infinite;
+  }
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scroll-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }

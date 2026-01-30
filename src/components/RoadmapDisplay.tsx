@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Roadmap, Course } from '@/lib/roadmaps';
 import { softPrerequisites } from '@/lib/softPrerequisites';
 import InteractiveWorkspace from './InteractiveWorkspace';
 import CourseModal from './CourseModal';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from './ui/Button';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 interface RoadmapProps {
   roadmap: Roadmap;
@@ -51,6 +53,36 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap: initialRoadmap }) => 
     setTakenCourses(newSet);
     if (user) {
       localStorage.setItem(`gradflo_progress_${user.email}`, JSON.stringify(Array.from(newSet)));
+    }
+  };
+
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  const handleExport = async (type: 'pdf' | 'png') => {
+    if (!exportRef.current) return;
+
+    // Ensure fonts and styles are loaded
+    const canvas = await html2canvas(exportRef.current, {
+      scale: 2, // High res
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: true,
+    });
+
+    if (type === 'png') {
+      const link = document.createElement('a');
+      link.download = `my-roadmap.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    } else {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save('my-roadmap.pdf');
     }
   };
 
@@ -260,8 +292,12 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap: initialRoadmap }) => 
 
   return (
     <div className="mt-8 w-full flex items-center justify-center relative">
+      <div className="absolute top-0 right-0 z-50 flex gap-2">
+        <Button size="sm" variant="secondary" onClick={() => handleExport('png')}>Save Image</Button>
+        <Button size="sm" variant="secondary" onClick={() => handleExport('pdf')}>Save PDF</Button>
+      </div>
       <InteractiveWorkspace contentWidth={maxBounds.width + PADDING * 2} contentHeight={maxBounds.height + PADDING * 2}>
-        <div className="relative rounded-3xl p-4" style={{ width: maxBounds.width + PADDING * 2, height: maxBounds.height + PADDING * 2 }}>
+        <div ref={exportRef} className="relative rounded-3xl p-4 bg-white" style={{ width: maxBounds.width + PADDING * 2, height: maxBounds.height + PADDING * 2 }}>
           <svg className="absolute inset-0 h-full w-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="edgeGradient" x1="0" y1="0" x2="0" y2="1">

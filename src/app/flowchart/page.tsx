@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { roadmaps } from '@/lib/roadmaps';
 import RoadmapDisplay from '@/components/RoadmapDisplay';
+import SemesterView from '@/components/SemesterView';
 import { useAuth } from '@/context/AuthContext';
 
 import Link from 'next/link';
@@ -41,7 +42,8 @@ const FlowchartPage = () => {
           </h1>
         </div>
 
-        <div className="flex gap-4 justify-center mb-8 bg-[var(--ios-gray-6)] p-2 rounded-xl inline-block mx-auto">
+        {/* Legend */}
+        <div className="flex gap-4 justify-center mb-12 bg-[var(--ios-gray-6)] p-2 rounded-xl inline-block mx-auto">
           <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-white shadow-sm">
             <div className="w-3 h-3 rounded-full bg-[var(--ios-blue)] opacity-50"></div>
             <span className="text-sm font-medium">Major Req</span>
@@ -57,8 +59,11 @@ const FlowchartPage = () => {
         </div>
 
         {selectedRoadmap ? (
-          <div className="w-full flex justify-center">
-            <RoadmapDisplay roadmap={selectedRoadmap} />
+          <div className="w-full flex flex-col items-center gap-12">
+            <SemesterView roadmap={selectedRoadmap} />
+            <div className="w-full flex justify-center">
+              <RoadmapDisplay roadmap={selectedRoadmap} />
+            </div>
           </div>
         ) : (
           <div className="bg-white rounded-md shadow-md p-8 text-center text-gray-500 max-w-4xl mx-auto">
@@ -67,8 +72,8 @@ const FlowchartPage = () => {
         )}
       </div>
 
-      <footer className="p-4 bg-gray-100 text-center text-sm text-gray-500">
-        This is the bottom of the page.
+      <footer className="p-8 bg-gray-50 text-center text-sm text-gray-400 border-t border-gray-100">
+        &copy; {new Date().getFullYear()} GradFlo. All rights reserved.
       </footer>
     </div>
   );

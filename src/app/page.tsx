@@ -8,14 +8,18 @@ import { AnimatedSection } from "@/components/AnimatedSection";
 
 export default function Home() {
   return (
-    <main>
+    <main className="min-h-screen relative text-foreground bg-white">
       <Hero />
+      <div className="-mt-12 relative z-10 w-full">
+        <AnimatedSection>
+          <HowItWorks />
+        </AnimatedSection>
+      </div>
+
       <AnimatedSection>
         <Features />
       </AnimatedSection>
-      <AnimatedSection>
-        <HowItWorks />
-      </AnimatedSection>
+
       <AnimatedSection>
         <Testimonial />
       </AnimatedSection>

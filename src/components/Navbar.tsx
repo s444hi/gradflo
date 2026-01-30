@@ -9,7 +9,7 @@ export function Navbar() {
   const { user } = useAuth();
 
   return (
-    <nav className="flex w-full items-center justify-between py-2 border-b border-foreground/10 px-8">
+    <nav className="absolute top-0 left-0 w-full z-50 py-6 px-8 flex items-center justify-between">
       <div className="flex items-center gap-8">
         <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-foreground">
           <Image src="/gradflologo1.png" alt="GradFlo Logo" width={40} height={40} />
@@ -35,7 +35,7 @@ export function Navbar() {
             <Link href="/login" className="text-foreground/80 hover:text-primary transition-colors">
               Log In
             </Link>
-            <Link href="/signup" className="bg-primary text-white px-5 py-2 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+            <Link href="/signup" className="bg-primary text-white px-5 py-2 rounded-xl font-semibold hover:bg-primary/90 transition-colors shadow-sm">
               Sign Up
             </Link>
           </>
