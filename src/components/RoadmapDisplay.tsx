@@ -1,7 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { Roadmap } from '@/lib/roadmaps';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Roadmap, Course } from '@/lib/roadmaps';
 import { softPrerequisites } from '@/lib/softPrerequisites';
 import InteractiveWorkspace from './InteractiveWorkspace';
+import CourseModal from './CourseModal';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from './ui/Button';
 
 interface RoadmapProps {
   roadmap: Roadmap;
@@ -15,6 +18,9 @@ type Node = {
   x: number;
   y: number;
   tone?: "major" | "ge" | "science";
+  level?: number;
+  outgoingEdges: Set<string>;
+  incomingEdges: Set<string>;
 };
 
 type Edge = {
@@ -23,24 +29,51 @@ type Edge = {
   bend?: number;
 };
 
-const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
+const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap: initialRoadmap }) => {
+  const { user } = useAuth();
+  const [activeRoadmap, setActiveRoadmap] = useState(initialRoadmap);
   const [takenCourses, setTakenCourses] = useState(new Set<string>());
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  const handleCourseClick = (courseId: string) => {
-    setTakenCourses(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(courseId)) {
-        newSet.delete(courseId);
-      } else {
-        newSet.add(courseId);
+  // Load progress locally if user exists
+  useEffect(() => {
+    if (user) {
+      const saved = localStorage.getItem(`gradflo_progress_${user.email}`);
+      if (saved) {
+        setTakenCourses(new Set(JSON.parse(saved)));
       }
-      return newSet;
-    });
+    }
+  }, [user]);
+
+  // Persist progress
+  const persistProgress = (newSet: Set<string>) => {
+    setTakenCourses(newSet);
+    if (user) {
+      localStorage.setItem(`gradflo_progress_${user.email}`, JSON.stringify(Array.from(newSet)));
+    }
+  };
+
+  const handleNodeClick = (courseId: string) => {
+    const course = allCourses.find(c => c.id === courseId);
+    if (course) {
+      setSelectedCourse(course);
+    }
+  };
+
+  const handleToggleTaken = (courseId: string) => {
+    const newSet = new Set(takenCourses);
+    if (newSet.has(courseId)) {
+      newSet.delete(courseId);
+    } else {
+      newSet.add(courseId);
+    }
+    persistProgress(newSet);
   };
 
   const allCourses = useMemo(() => {
-    return roadmap.years.flatMap(y => y.semesters.flatMap(s => s.courses));
-  }, [roadmap]);
+    return activeRoadmap.years.flatMap(y => y.semesters.flatMap(s => s.courses));
+  }, [activeRoadmap]);
 
   const combinedPrerequisitesWithBends: Edge[] = useMemo(() => {
     const prerequisites: Edge[] = [];
@@ -95,12 +128,12 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
       if (!courseA || !courseB) return 0;
 
       // Sort by year, then semester, then original order
-      const yearA = roadmap.years.findIndex(y => y.semesters.some(s => s.courses.some(c => c.id === a)));
-      const yearB = roadmap.years.findIndex(y => y.semesters.some(s => s.courses.some(c => c.id === b)));
+      const yearA = activeRoadmap.years.findIndex(y => y.semesters.some(s => s.courses.some(c => c.id === a)));
+      const yearB = activeRoadmap.years.findIndex(y => y.semesters.some(s => s.courses.some(c => c.id === b)));
       if (yearA !== yearB) return yearA - yearB;
 
-      const semA = roadmap.years.flatMap(y => y.semesters).findIndex(s => s.courses.some(c => c.id === a));
-      const semB = roadmap.years.flatMap(y => y.semesters).findIndex(s => s.courses.some(c => c.id === b));
+      const semA = activeRoadmap.years.flatMap(y => y.semesters).findIndex(s => s.courses.some(c => c.id === a));
+      const semB = activeRoadmap.years.flatMap(y => y.semesters).findIndex(s => s.courses.some(c => c.id === b));
       if (semA !== semB) return semA - semB;
 
       return allCourses.indexOf(courseA) - allCourses.indexOf(courseB);
@@ -117,7 +150,7 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
           if (!visited.has(nextCourseId)) {
             const nextCourseNode = nodesMap.get(nextCourseId);
             if (nextCourseNode) {
-              const allPrereqsVisited = Array.from(nextCourseNode.incomingEdges).every(prereqId => visited.has(prereqId));
+              const allPrereqsVisited = Array.from(nextCourseNode.incomingEdges).every((prereqId: string) => visited.has(prereqId));
               if (allPrereqsVisited) {
                 nextLevelCandidates.add(nextCourseId);
               }
@@ -164,13 +197,14 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
           x: xOffset + nodeIndex * NODE_GAP_X + PADDING,
           y: levelIndex * (CARD_H + LEVEL_GAP_Y) + PADDING,
           tone: course.type === 'major' ? 'major' : course.type === 'ge' ? 'ge' : 'science',
+          outgoingEdges: new Set(), // Placeholder as Node type requires it for this loop context if strict
+          incomingEdges: new Set(),
         });
       }
     });
   });
 
   const nodes = positionedNodes;
-
   const edges: Edge[] = combinedPrerequisitesWithBends;
 
   const getNode = (id: string) => {
@@ -182,8 +216,8 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
     return n;
   };
 
-  const anchorBottomCenter = (n: Node) => ({ x: n.x + CARD_W / 2, y: n.y + CARD_H });
-  const anchorTopCenter = (n: Node) => ({ x: n.x + CARD_W / 2, y: n.y });
+  const anchorBottomCenter = (n: { x: number, y: number }) => ({ x: n.x + CARD_W / 2, y: n.y + CARD_H });
+  const anchorTopCenter = (n: { x: number, y: number }) => ({ x: n.x + CARD_W / 2, y: n.y });
 
   function edgePath(e: Edge) {
     try {
@@ -216,7 +250,7 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
     ge: "text-gray-800/90 dark:text-gray-300/90",
     science: "text-gray-800/90 dark:text-gray-300/90"
   };
-  
+
   const takenClasses = "bg-green-100/70 border-green-400/50 dark:bg-green-900/20 dark:border-green-700/40";
 
   const maxBounds = nodes.reduce((acc, node) => ({
@@ -225,10 +259,10 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
   }), { width: 0, height: 0 });
 
   return (
-    <div className="mt-8 w-full flex items-center justify-center">
+    <div className="mt-8 w-full flex items-center justify-center relative">
       <InteractiveWorkspace contentWidth={maxBounds.width + PADDING * 2} contentHeight={maxBounds.height + PADDING * 2}>
         <div className="relative rounded-3xl p-4" style={{ width: maxBounds.width + PADDING * 2, height: maxBounds.height + PADDING * 2 }}>
-          <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+          <svg className="absolute inset-0 h-full w-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="edgeGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="rgba(156, 163, 175, 0.5)" />
@@ -247,6 +281,7 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
                 stroke="url(#edgeGradient)"
                 strokeWidth={2}
                 markerEnd="url(#arrowHead)"
+                className="transition-all duration-500"
               />
             ))}
           </svg>
@@ -256,11 +291,12 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
             return (
               <div
                 key={n.id}
-                onClick={() => handleCourseClick(n.id)}
+                onClick={() => handleNodeClick(n.id)}
                 className={[
-                  "absolute rounded-xl border backdrop-blur-sm transition-all cursor-pointer",
-                  "hover:scale-[1.02]",
-                  isTaken ? takenClasses : toneClasses[n.tone ?? "ge"]
+                  "absolute rounded-2xl border backdrop-blur-md transition-all cursor-pointer shadow-sm hover:shadow-lg",
+                  "hover:scale-[1.05] active:scale-[0.98]",
+                  isTaken ? takenClasses : toneClasses[n.tone ?? "ge"],
+                  isEditMode ? "hover:ring-2 hover:ring-yellow-400" : ""
                 ].join(" ")}
                 style={{ left: n.x, top: n.y, width: CARD_W, height: CARD_H }}
               >
@@ -282,12 +318,34 @@ const RoadmapDisplay: React.FC<RoadmapProps> = ({ roadmap }) => {
                     </svg>
                   </div>
                 )}
+                {isEditMode && (
+                  <div className="absolute -top-2 -right-2 bg-yellow-400 text-white rounded-full p-1 shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                  </div>
+                )}
                 <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/20 [mask-image:radial-gradient(60px_40px_at_0_0,black,transparent)]" />
               </div>
             );
           })}
         </div>
       </InteractiveWorkspace>
+
+      {/* Floating Toggle Controls */}
+      <div className="fixed bottom-8 right-8 z-40 flex flex-col gap-2">
+        <Button size="md" variant={isEditMode ? "primary" : "secondary"} onClick={() => setIsEditMode(!isEditMode)}>
+          {isEditMode ? "Done Editing" : "Edit Roadmap"}
+        </Button>
+      </div>
+
+      <CourseModal
+        course={selectedCourse}
+        isOpen={!!selectedCourse}
+        onClose={() => setSelectedCourse(null)}
+        onToggleTaken={handleToggleTaken}
+        isTaken={selectedCourse ? takenCourses.has(selectedCourse.id) : false}
+      />
     </div>
   );
 };

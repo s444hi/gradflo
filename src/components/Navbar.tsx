@@ -1,10 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import ProfileDropdown from "./ui/ProfileDropdown";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
-  // TODO: Add logic to conditionally render ProfileDropdown or Log In/Sign Up based on auth status
-  const isLoggedIn = true;
+  const { user } = useAuth();
 
   return (
     <nav className="flex w-full items-center justify-between py-2 border-b border-foreground/10 px-8">
@@ -26,7 +28,7 @@ export function Navbar() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        {isLoggedIn ? (
+        {user ? (
           <ProfileDropdown />
         ) : (
           <>

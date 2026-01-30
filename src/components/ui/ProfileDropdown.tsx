@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import ProfileModal from './ProfileModal';
 
 const ProfileDropdown = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // Hardcoded user data, this should come from your auth context or user state
-  const user = {
-    name: 'Alex',
-    major: 'Computer Science and Linguistics, BS',
-  };
-  
+  const { user } = useAuth();
+
+  if (!user) return null;
+
   const userInitial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
 
   return (
@@ -24,8 +22,8 @@ const ProfileDropdown = () => {
           <span className="text-lg font-bold">{userInitial}</span>
         </div>
       </button>
-      
-      <ProfileModal 
+
+      <ProfileModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         user={user}

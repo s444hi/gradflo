@@ -1,173 +1,106 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Select";
-import { undergraduateMajors, graduateMajors } from "@/lib/majors";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { undergraduateMajors } from "@/lib/majors";
 import { useRouter } from "next/navigation";
-import Welcome from "@/components/Welcome";
 
 export default function SignupPage() {
-  const [step, setStep] = useState(1);
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [year, setYear] = useState("");
-  const [major, setMajor] = useState("");
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [major, setMajor] = useState("Computer Science and Linguistics, BS"); // Default per requirements
+  const [year, setYear] = useState("Year 1");
+
+  const { signup, user, error, clearError } = useAuth();
   const router = useRouter();
 
-  const handleNext = () => {
-    if (!email || !year) {
-      alert("Please fill in all fields.");
-      return;
-    }
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setStep(step + 1);
-      setIsTransitioning(false);
-    }, 300);
-  };
-
-  const handleBack = () => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setStep(step - 1);
-      setIsTransitioning(false);
-    }, 300);
-  };
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!major || !name) {
-      alert("Please fill in all fields.");
-      return;
-    }
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setStep(step + 1);
-      setIsTransitioning(false);
-    }, 300);
-  };
-
   useEffect(() => {
-    if (step === 3) {
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 2000);
+    if (user) {
+      router.push("/dashboard");
     }
-  }, [step, router]);
+    return () => clearError();
+  }, [user, router]); // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !name || !password) {
+      alert("Please fill in required fields.");
+      return;
+    }
+    await signup(email, password, name, major, year);
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      {step === 3 ? (
-        <Welcome name={name} />
-      ) : (
-        <Card>
-          <div
-            className={`transition-opacity duration-300 ${
-              isTransitioning ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            {step === 1 && (
-              <div>
-                <h1 className="text-3xl font-bold text-foreground text-center mb-4">
-                  Create an Account
-                </h1>
-                <p className="text-foreground/60 text-center mb-8">
-                  Already have an account?{" "}
-                  <Link href="/login" className="text-[var(--primary)] hover:opacity-90">
-                    Log in
-                  </Link>
-                </p>
-                <form>
-                  <Input
-                    id="email"
-                    type="email"
-                    label="Email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                  <Input
-                    id="college"
-                    type="text"
-                    label="College"
-                    value="San Jose State University"
-                    disabled
-                  />
-                  <Select
-                    id="year"
-                    label="Year"
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                  >
-                    <option value="">Select your year</option>
-                    <option value="Freshman">Freshman</option>
-                    <option value="Sophomore">Sophomore</option>
-                    <option value="Junior">Junior</option>
-                    <option value="Senior">Senior</option>
-                    <option value="Graduate">Graduate</option>
-                  </Select>
-                  <div className="mt-8">
-                    <Button type="button" onClick={handleNext}>
-                      Next
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            )}
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Create Account</h1>
+          <p className="text-[var(--ios-gray-1)]">Start planning your graduation today.</p>
+        </div>
 
-            {step === 2 && (
-              <div>
-                <h1 className="text-3xl font-bold text-foreground text-center mb-4">
-                  Tell us about yourself
-                </h1>
-                <p className="text-foreground/60 text-center mb-8">
-                  This will help us personalize your experience.
-                </p>
-                <form onSubmit={handleSubmit}>
-                  <Input
-                    id="name"
-                    type="text"
-                    label="Name"
-                    placeholder="John Doe"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                  <Select
-                    id="major"
-                    label="Major"
-                    value={major}
-                    onChange={(e) => setMajor(e.target.value)}
-                  >
-                    <option value="">Select your major</option>
-                    {year === "Graduate"
-                      ? graduateMajors.map((major) => (
-                          <option key={major} value={major}>
-                            {major}
-                          </option>
-                        ))
-                      : undergraduateMajors.map((major) => (
-                          <option key={major} value={major}>
-                            {major}
-                          </option>
-                        ))}
-                  </Select>
-                  <div className="mt-8 grid grid-cols-2 gap-4">
-                    <Button type="button" onClick={handleBack} variant="secondary">
-                      Back
-                    </Button>
-                    <Button type="submit">Sign Up</Button>
-                  </div>
-                </form>
-              </div>
-            )}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            {error}
           </div>
-        </Card>
-      )}
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <Input
+            id="name"
+            type="text"
+            label="Full Name"
+            placeholder="John Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
+            id="email"
+            type="email"
+            label="Email"
+            placeholder="name@university.edu"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Input
+            id="password"
+            type="password"
+            label="Password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-[var(--ios-gray-1)] ml-1">Major</label>
+            <select
+              value={major}
+              onChange={(e) => setMajor(e.target.value)}
+              className="w-full px-4 py-3 bg-[var(--ios-gray-6)] rounded-xl text-[17px] outline-none border-2 border-transparent focus:border-[var(--ios-blue)] focus:bg-white transition-all appearance-none"
+            >
+              {undergraduateMajors.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+
+          <Button type="submit" className="w-full mt-2" size="lg">Sign Up</Button>
+        </form>
+
+        <div className="mt-6 text-center text-sm text-[var(--ios-gray-1)]">
+          Already have an account?{" "}
+          <Link href="/login" className="text-[var(--ios-blue)] font-medium hover:underline">
+            Log in
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import React from "react";
 
-export function Card({ children }: { children: React.ReactNode }) {
+export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className="bg-white/20 backdrop-blur-lg rounded-xl shadow-lg p-8 w-full max-w-md mx-auto">
+    <div className={`glass-panel rounded-2xl shadow-sm p-6 ${className}`}>
       {children}
     </div>
   );
